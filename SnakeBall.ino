@@ -45,7 +45,7 @@ void setup() {
 // }
 
 uint8_t snakeHeadX, snakeHeadY;
-uint8_t foodHeadX, foodHeadY;
+uint8_t foodHeadX=foodX, foodHeadY=foodY;
 void restrictFood() {
   // 穿墙逻辑
   if (foodX < 0) foodX = SCREEN_WIDTH - CELL_SIZE;
@@ -81,7 +81,7 @@ void update() {
 
 
 #ifdef SERVER
-  Serial.println("ServerUpdate");
+  //Serial.println("ServerUpdate");
   if (shouldUpdate) {
     Serial.print("ShouldUpdate: ");
     Serial.println(shouldUpdate);
@@ -105,7 +105,7 @@ void update() {
     packet[4] = foodY;
   }
 #else
-  Serial.println("ClientUpdate");
+  //Serial.println("ClientUpdate");
   if (valid_digit(0, 1) && (packet[0] != snakeX[0] || packet[1] != snakeY[0])) {
     moveSnake();
     snakeX[0] = packet[0];
@@ -130,7 +130,12 @@ void update() {
   if (foodHeadX != foodX || foodHeadY != foodY) {
     packet[4] = foodHeadX;
     packet[5] = foodHeadY;
-    
+    Serial.print("foodX: ");
+    Serial.println(foodHeadX);
+    Serial.print("foodY: ");
+    Serial.println(foodHeadY);
+    Serial.println("uploadFoodPos");
+    //delay(3000);
   }
 #endif
 
