@@ -2,7 +2,7 @@
 #include <Adafruit_SSD1306.h>
 #include <IRremote.hpp>
 #include "Net.h"
-//#define SERVER
+#define SERVER
 // OLED 显示参数
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
