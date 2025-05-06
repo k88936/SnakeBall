@@ -12,14 +12,14 @@ WiFiUDP UDP;
 #define PACKET_SIZE 6
 #define VOID_VALUE 255
 uint8_t packet[PACKET_SIZE];
-bool valid_digit(int a){
-  return packet[a]!= VOID_VALUE;
+bool valid_digit(int a) {
+  return packet[a] != VOID_VALUE;
 }
-bool valid_digit(int a,int b){
-  return packet[a]!= VOID_VALUE&&packet[b]!= VOID_VALUE;
+bool valid_digit(int a, int b) {
+  return packet[a] != VOID_VALUE && packet[b] != VOID_VALUE;
 }
 void clear_packet() {
-    memset(packet, 255, sizeof(packet));
+  memset(packet, 255, sizeof(packet));
 }
 void setup_net() {
   clear_packet();
@@ -39,17 +39,17 @@ void setup_net() {
 }
 
 void send_to(IPAddress targetIP) {
-  
+
   UDP.beginPacket(targetIP, UDP_PORT);
   UDP.write(packet, PACKET_SIZE);  // 发送原始字节数组
   UDP.endPacket();
   clear_packet();
 }
 void send_to_client() {
-  send_to( CLIENT_IP);
+  send_to(CLIENT_IP);
 }
 void send_to_server() {
-  send_to( SERVER_IP);
+  send_to(SERVER_IP);
 }
 bool try_receive() {
 
@@ -57,7 +57,7 @@ bool try_receive() {
   if (packetSize) {
     int len = UDP.read(packet, MAX_PACKET_SIZE);
     if (len >= PACKET_SIZE) {
-      for(int i=0;i<PACKET_SIZE;i++){
+      for (int i = 0; i < PACKET_SIZE; i++) {
         Serial.print(" ");
         Serial.println(packet[i], HEX);
       }

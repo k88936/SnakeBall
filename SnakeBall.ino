@@ -101,8 +101,8 @@ void update() {
     foodX = packet[4];
     foodY = packet[5];
     restrictFood();
-    packet[3] = foodX;
-    packet[4] = foodY;
+    packet[2] = foodX;
+    packet[3] = foodY;
   }
 #else
   //Serial.println("ClientUpdate");
