@@ -2,7 +2,7 @@
 #include <Adafruit_SSD1306.h>
 #include <IRremote.hpp>
 #include "Net.h"
-#define SERVER
+//#define SERVER
 // OLED 显示参数
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -72,12 +72,13 @@ void restrictSnake() {
   if (snakeY[0] >= SCREEN_HEIGHT) snakeY[0] = 0;
 }
 void update() {
+  try_receive();
   bool shouldUpdate;
   if (millis() - lastMove >= moveInterval) {
     lastMove = millis();
     shouldUpdate = true;
-  }else shouldUpdate= false;
-  
+  } else shouldUpdate = false;
+
 
 #ifdef SERVER
   Serial.println("ServerUpdate");
@@ -112,6 +113,8 @@ void update() {
     Serial.println(snakeX[0]);
     Serial.print("SnakeY: ");
     Serial.println(snakeX[1]);
+    Serial.println("updateSnakePos");
+    
   }
   if (valid_digit(3, 4)) {
     foodX = packet[3];
@@ -120,6 +123,7 @@ void update() {
     Serial.println(foodX);
     Serial.print("foodY: ");
     Serial.println(foodY);
+    Serial.println("updateFoodPos");
   }
   if (foodHeadX != foodX || foodHeadY != foodY) {
     packet[5] = foodHeadX;
@@ -129,11 +133,10 @@ void update() {
 
 
 #ifdef SERVER
-send_to_client();
-#else 
-send_to_server()
+  send_to_client();
+#else
+  send_to_server();
 #endif
-
 }
 
 void drawSnake() {
