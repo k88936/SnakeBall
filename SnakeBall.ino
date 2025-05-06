@@ -23,7 +23,7 @@ int foodX = 40, foodY = 20;                  // 食物的初始位置
 int dx = CELL_SIZE, dy = 0;                  // 初始运动方向为右
 
 unsigned long lastMove = 0;
-const int moveInterval = 150;  // 蛇的移动时间间隔（单位 ms）
+const int moveInterval = 1000;  // 蛇的移动时间间隔（单位 ms）
 int gameTime = 0;
 bool ballWin = false;
 bool gameOver = false;
@@ -94,40 +94,43 @@ void update() {
     Serial.println(snakeX[0]);
     Serial.print("SnakeY: ");
     Serial.println(snakeX[1]);
+    //delay(1000);
   }
 
-  if (valid_digit(5, 6)) {
-    foodX = packet[5];
-    foodY = packet[6];
+  if (valid_digit(4, 5)) {
+    foodX = packet[4];
+    foodY = packet[5];
     restrictFood();
     packet[3] = foodX;
     packet[4] = foodY;
   }
 #else
   Serial.println("ClientUpdate");
-  if (valid_digit(1, 2) && (packet[0] != snakeX[0] || packet[1] != snakeY[0])) {
+  if (valid_digit(0, 1) && (packet[0] != snakeX[0] || packet[1] != snakeY[0])) {
     moveSnake();
     snakeX[0] = packet[0];
-    snakeY[1] = packet[1];
+    snakeY[0] = packet[1];
     Serial.print("SnakeX: ");
     Serial.println(snakeX[0]);
     Serial.print("SnakeY: ");
-    Serial.println(snakeX[1]);
+    Serial.println(snakeY[0]);
     Serial.println("updateSnakePos");
-    
+    //delay(1000);
   }
-  if (valid_digit(3, 4)) {
-    foodX = packet[3];
-    foodY = packet[4];
+  if (valid_digit(2, 3)) {
+    foodX = packet[2];
+    foodY = packet[3];
     Serial.print("foodX: ");
     Serial.println(foodX);
     Serial.print("foodY: ");
     Serial.println(foodY);
     Serial.println("updateFoodPos");
+    //delay(1000);
   }
   if (foodHeadX != foodX || foodHeadY != foodY) {
-    packet[5] = foodHeadX;
-    packet[6] = foodHeadY;
+    packet[4] = foodHeadX;
+    packet[5] = foodHeadY;
+    
   }
 #endif
 
