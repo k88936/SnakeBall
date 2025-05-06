@@ -72,6 +72,7 @@ void restrictSnake() {
   if (snakeY[0] >= SCREEN_HEIGHT) snakeY[0] = 0;
 }
 void update() {
+  try_receive();
   bool shouldUpdate;
   if (millis() - lastMove >= moveInterval) {
     lastMove = millis();

@@ -5,8 +5,8 @@
 #define UDP_PORT 9527
 #define MAX_PACKET_SIZE 255
 
-#define SERVER_IP IPAddress(192, 168, 43, 4)  // 替换为你想发送的目标 IP 地址
-#define CLIENT_IP IPAddress(192, 168, 43, 63)
+#define SERVER_IP IPAddress(192, 168, 43, 63)  // 替换为你想发送的目标 IP 地址
+#define CLIENT_IP IPAddress(192, 168, 43, 4)
 
 WiFiUDP UDP;
 #define PACKET_SIZE 6
