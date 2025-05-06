@@ -1,7 +1,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <IRremote.hpp>
-
+#include "Net.h"
+#define SERVER
 // OLED 显示参数
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -14,22 +15,28 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // 游戏参数
-const int CELL_SIZE = 6;     // 每节蛇和食物的尺寸变大了（由 4 改为 6）
-const int MAX_LENGTH = 128;  // 蛇的最大节数
+const int CELL_SIZE = 6;                     // 每节蛇和食物的尺寸变大了（由 4 改为 6）
+const int MAX_LENGTH = 128;                  // 蛇的最大节数
+int snakeX[MAX_LENGTH], snakeY[MAX_LENGTH];  // 蛇每一节的坐标数组
+int snakeLength = 3;                         // 当前蛇的长度
+int foodX = 40, foodY = 20;                  // 食物的初始位置
+int dx = CELL_SIZE, dy = 0;                  // 初始运动方向为右
 
+unsigned long lastMove = 0;
+const int moveInterval = 150;  // 蛇的移动时间间隔（单位 ms）
+
+bool gameOver = false;
 // 初始化 OLED 和红外遥控
 void setup() {
+  Serial.begin(9600);
+  setup_net();
   Wire.begin(SDA_PIN, SCL_PIN);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.display();
 
   IrReceiver.begin(IR_PIN, ENABLE_LED_FEEDBACK);  // 初始化红外接收
-  Serial.begin(115200);
 }
-int foodY = (rand() % (SCREEN_HEIGHT / CELL_SIZE)) * CELL_SIZE;
-int foodX = (rand() % (SCREEN_WIDTH / CELL_SIZE)) * CELL_SIZE;
-  // 绘制整条蛇
 int gameTime = 0;
 bool gameOver = false;
 bool ballWin = false; 
@@ -37,6 +44,7 @@ void timer() {
   delay (1000);
   gameTime++;
 }
+
 //void drawSnake() {
 //for (int i = 0; i < snakeLength; i++) {
 //display.fillRect(snakeX[i], snakeY[i], CELL_SIZE, CELL_SIZE, WHITE);
@@ -186,4 +194,21 @@ void drawTime() {
       drawFood();
       display.display();
     }
-    //}
+
+uint8_t snakeHeadX, snakeHeadY;
+uint8_t void1, void2;
+void updateSnake() {
+#ifdef SEREVR
+  moveSnake();
+  packet[0]=snakeX[0];
+  packet[1]=snakeY[0];
+#else
+  if (try_receive(snakeHeadX, snakeHeadY, void1, void2)
+      && (snakeHeadX != snakeX[0] || snakeHeadY != snakeY[0])) {
+    moveSnake();
+  }
+#endif
+}
+void updateFood(){
+  
+}
