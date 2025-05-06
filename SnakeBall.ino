@@ -24,7 +24,8 @@ int dx = CELL_SIZE, dy = 0;                  // 初始运动方向为右
 
 unsigned long lastMove = 0;
 const int moveInterval = 150;  // 蛇的移动时间间隔（单位 ms）
-
+int gameTime = 0;
+bool ballWin = false;
 bool gameOver = false;
 // 初始化 OLED 和红外遥控
 void setup() {
@@ -34,181 +35,262 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.display();
-
   IrReceiver.begin(IR_PIN, ENABLE_LED_FEEDBACK);  // 初始化红外接收
 }
-int gameTime = 0;
-bool gameOver = false;
-bool ballWin = false; 
-void timer() {
-  delay (1000);
-  gameTime++;
-}
 
-//void drawSnake() {
-//for (int i = 0; i < snakeLength; i++) {
-//display.fillRect(snakeX[i], snakeY[i], CELL_SIZE, CELL_SIZE, WHITE);
-//}
-//}
 
-// 蛇移动，每节跟随前一节
-void resetGame() {
-  //snakeLength = 3;
-  //dx = CELL_SIZE;
-  //dy = 0;
-  //or (int i = 0; i < snakeLength; i++) {
-  // snakeX[i] = 64 - i * CELL_SIZE;
-  //snakeY[i] = 32;
-  //}
-  // 随机生成一个食物位置（以 CELL_SIZE 对齐）
-  foodX = (rand() % (SCREEN_WIDTH / CELL_SIZE)) * CELL_SIZE;
-  foodY = (rand() % (SCREEN_HEIGHT / CELL_SIZE)) * CELL_SIZE;
-  gameOver = false;
-  gameTime = 0;
-  
-}
-//void moveSnake() {
-  //for (int i = snakeLength - 1; i > 0; i--) {
-  //snakeX[i] = snakeX[i - 1];
-  //snakeY[i] = snakeY[i - 1];
-  //}
-  //snakeX[0] += dx;
-  //snakeY[0] += dy;
+// void timer() {
+//   delay(1000);
+//   gameTime++;
+// }
 
+uint8_t snakeHeadX, snakeHeadY;
+uint8_t foodHeadX, foodHeadY;
+void restrictFood() {
   // 穿墙逻辑
-  //if (foodX < 0) foodX = SCREEN_WIDTH - CELL_SIZE;
-  //if (foodX >= SCREEN_WIDTH) foodX = 0;
-  //if (foodY < 0) foodY = SCREEN_HEIGHT - CELL_SIZE;
-  //if (foodY >= SCREEN_HEIGHT) foodY = 0;
-  //}
+  if (foodX < 0) foodX = SCREEN_WIDTH - CELL_SIZE;
+  if (foodX >= SCREEN_WIDTH) foodX = 0;
+  if (foodY < 0) foodY = SCREEN_HEIGHT - CELL_SIZE;
+  if (foodY >= SCREEN_HEIGHT) foodY = 0;
+}
+void moveSnake() {
+  for (int i = snakeLength - 1; i > 0; i--) {
+    snakeX[i] = snakeX[i - 1];
+    snakeY[i] = snakeY[i - 1];
+  }
+}
 
-  // 绘制食物
-  void drawFood() {
-    display.fillRect(foodX, foodY, CELL_SIZE, CELL_SIZE, WHITE);
+void stepSnake() {
+  snakeX[0] += dx;
+  snakeY[0] += dy;
+}
+void restrictSnake() {
+  // 穿墙逻辑
+  if (snakeX[0] < 0) snakeX[0] = SCREEN_WIDTH - CELL_SIZE;
+  if (snakeX[0] >= SCREEN_WIDTH) snakeX[0] = 0;
+  if (snakeY[0] < 0) snakeY[0] = SCREEN_HEIGHT - CELL_SIZE;
+  if (snakeY[0] >= SCREEN_HEIGHT) snakeY[0] = 0;
+}
+void update() {
+  bool shouldUpdate;
+  if (millis() - lastMove >= moveInterval) {
+    lastMove = millis();
+    shouldUpdate = true;
+  }else shouldUpdate= false;
+  
+
+#ifdef SERVER
+  Serial.println("ServerUpdate");
+  if (shouldUpdate) {
+    Serial.print("ShouldUpdate: ");
+    Serial.println(shouldUpdate);
+    moveSnake();
+    stepSnake();
+    restrictSnake();
+    packet[0] = snakeX[0];
+    packet[1] = snakeY[0];
+    Serial.print("SnakeX: ");
+    Serial.println(snakeX[0]);
+    Serial.print("SnakeY: ");
+    Serial.println(snakeX[1]);
   }
 
-  // 蛇吃到食物后的处理
-  //void checkFood() {
-  //int dx = snakeX[0] - foodX;
-  //int dy = snakeY[0] - foodY;
-  //if (dx * dx + dy * dy < CELL_SIZE * CELL_SIZE) {
-  // 吃到食物，身体增长
-  //if (snakeLength < MAX_LENGTH) {
-  //snakeLength++;
-  //}
-  // 生成新食物位置（CELL_SIZE 对齐）
-  //foodX = (rand() % (SCREEN_WIDTH / CELL_SIZE)) * CELL_SIZE;
-  //foodY = (rand() % (SCREEN_HEIGHT / CELL_SIZE)) * CELL_SIZE;
-  //}
-  //}
+  if (valid_digit(5, 6)) {
+    foodX = packet[5];
+    foodY = packet[6];
+    restrictFood();
+    packet[3] = foodX;
+    packet[4] = foodY;
+  }
+#else
+  Serial.println("ClientUpdate");
+  if (valid_digit(1, 2) && (packet[0] != snakeX[0] || packet[1] != snakeY[0])) {
+    moveSnake();
+    snakeX[0] = packet[0];
+    snakeY[1] = packet[1];
+    Serial.print("SnakeX: ");
+    Serial.println(snakeX[0]);
+    Serial.print("SnakeY: ");
+    Serial.println(snakeX[1]);
+  }
+  if (valid_digit(3, 4)) {
+    foodX = packet[3];
+    foodY = packet[4];
+    Serial.print("foodX: ");
+    Serial.println(foodX);
+    Serial.print("foodY: ");
+    Serial.println(foodY);
+  }
+  if (foodHeadX != foodX || foodHeadY != foodY) {
+    packet[5] = foodHeadX;
+    packet[6] = foodHeadY;
+  }
+#endif
+
+
+#ifdef SERVER
+send_to_client();
+#else 
+send_to_server()
+#endif
+
+}
+
+void drawSnake() {
+  for (int i = 0; i < snakeLength; i++) {
+    display.fillRect(snakeX[i], snakeY[i], CELL_SIZE, CELL_SIZE, WHITE);
+  }
+}
+
+// // 蛇移动，每节跟随前一节
+// void resetGame() {
+//   //snakeLength = 3;
+//   //dx = CELL_SIZE;
+//   //dy = 0;
+//   //or (int i = 0; i < snakeLength; i++) {
+//   // snakeX[i] = 64 - i * CELL_SIZE;
+//   //snakeY[i] = 32;
+//   //}
+//   // 随机生成一个食物位置（以 CELL_SIZE 对齐）
+//   foodX = (rand() % (SCREEN_WIDTH / CELL_SIZE)) * CELL_SIZE;
+//   foodY = (rand() % (SCREEN_HEIGHT / CELL_SIZE)) * CELL_SIZE;
+//   gameOver = false;
+//   gameTime = 0;
+// }
+// 绘制食物
+void drawFood() {
+  display.fillRect(foodX, foodY, CELL_SIZE, CELL_SIZE, WHITE);
+}
+
+
+
+
+// 蛇吃到食物后的处理
+void checkFood() {
+  int dx = snakeX[0] - foodX;
+  int dy = snakeY[0] - foodY;
+  if (dx * dx + dy * dy < CELL_SIZE * CELL_SIZE) {
+    // 吃到食物，身体增长
+    if (snakeLength < MAX_LENGTH) {
+      snakeLength++;
+    }
+    // 生成新食物位置（CELL_SIZE 对齐）
+    foodX = (rand() % (SCREEN_WIDTH / CELL_SIZE)) * CELL_SIZE;
+    foodY = (rand() % (SCREEN_HEIGHT / CELL_SIZE)) * CELL_SIZE;
+
+    packet[3] = foodX;
+    packet[4] = foodY;
+  }
+}
+
+
 void drawTime() {
+
   // ...其他游戏逻辑（如蛇移动、碰撞检测等）
 
   // 更新屏幕显示
-  display.clearDisplay(); // 清空屏幕
-  
+  // display.clearDisplay();  // 清空屏幕
+
   // 显示gameTime（右上角）
-  display.setTextSize(1);        // 字体大小
-  display.setTextColor(WHITE);   // 颜色
-  display.setCursor(SCREEN_WIDTH - 30, 0); // 位置：X=屏幕宽度-30像素，Y=0
+  display.setTextSize(1);                   // 字体大小
+  display.setTextColor(WHITE);              // 颜色
+  display.setCursor(SCREEN_WIDTH - 30, 0);  // 位置：X=屏幕宽度-30像素，Y=0
   display.print("Time:");
   display.print(gameTime);
 
-  // ...绘制其他元素（如蛇、球等）
-  
-  display.display(); // 刷新屏幕
+  // display.display();  // 刷新屏幕
 }
-  // 检测蛇是否撞到自己身体
-  void check1() {
-    if (gameTime == 20) {
-      gameOver = true;
-      ballWin = true;
-    }
-  }
-    // 显示“GAME OVER”并等待 5 秒后重新开始游戏
-    void showGameOver() {
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(WHITE);
-      display.setCursor(20, 24);  // 居中大约显示
-      if (ballWin) {
-        display.println("BALL WIN");
-        display.display();
-        delay(5000);  // 停留 5 秒
-        resetGame();
-      }
-    }
 
-    // 接收红外遥控指令并设置方向（不能向相反方向转弯）
-    void handleIR() {
-      if (!IrReceiver.decode()) return;
+// void check1() {
+//   if (gameTime == 20) {
+//     gameOver = true;
+//     ballWin = true;
+//   }
+// }
+// // 显示“GAME OVER”并等待 5 秒后重新开始游戏
+// void showGameOver() {
+//   display.clearDisplay();
+//   display.setTextSize(2);
+//   display.setTextColor(WHITE);
+//   display.setCursor(20, 24);  // 居中大约显示
+//   if (ballWin) {
+//     display.println("BALL WIN");
+//     display.display();
+//     delay(5000);  // 停留 5 秒
+//     resetGame();
+//   }
+// }
 
-      uint8_t cmd = IrReceiver.decodedIRData.command;
-      Serial.println(cmd, HEX);
+// 接收红外遥控指令并设置方向（不能向相反方向转弯）
+void handleIR() {
+  if (!IrReceiver.decode()) return;
+  uint8_t cmd = IrReceiver.decodedIRData.command;
+  Serial.println(cmd, HEX);
 
-      if (cmd == 0x18 && foodY < SCREEN_HEIGHT) {
-        foodX += 0;
-        foodY += -CELL_SIZE;
-      }  // 上
-      if (cmd == 0x52 && foodY > 0) {
-        foodX += 0;
-        foodY += CELL_SIZE;
-      }  // 下
-      if (cmd == 0x08 && foodX > 0) {
-        foodX += -CELL_SIZE;
-        foodY += 0;
-      }  // 左
-      if (cmd == 0x5A && foodX < SCREEN_WIDTH) {
-        foodX += CELL_SIZE;
-        foodY += 0;
-      }  // 右
-         // 穿墙逻辑
-      if (foodX < 0) foodX = SCREEN_WIDTH - CELL_SIZE;
-      if (foodX >= SCREEN_WIDTH) foodX = 0;
-      if (foodY < 0) foodY = SCREEN_HEIGHT - CELL_SIZE;
-      if (foodY >= SCREEN_HEIGHT) foodY = 0;
-      IrReceiver.resume();
-    }
+#ifdef SERVER
+  if (cmd == 0x18 && dy == 0) {
+    dx = 0;
+    dy = -CELL_SIZE;
+  }  // 上
+  if (cmd == 0x52 && dy == 0) {
+    dx = 0;
+    dy = CELL_SIZE;
+  }  // 下
+  if (cmd == 0x08 && dx == 0) {
+    dx = -CELL_SIZE;
+    dy = 0;
+  }  // 左
+  if (cmd == 0x5A && dx == 0) {
+    dx = CELL_SIZE;
+    dy = 0;
+  }  // 右
 
-    // 主循环
-    void loop() {
-      timer();
-      drawTime();
-      handleIR();  // 处理红外遥控指令
-
-      if (gameOver) {
-        showGameOver();  // 撞到自己后显示 GAME OVER
-        return;
-      }
-
-      // 控制蛇的移动节奏
-      //if (millis() - lastMove >= moveInterval) {
-      // lastMove = millis();
-
-      //moveSnake();
-      check1();
-      // checkFood();
-
-      display.clearDisplay();
-      //drawSnake();
-      drawFood();
-      display.display();
-    }
-
-uint8_t snakeHeadX, snakeHeadY;
-uint8_t void1, void2;
-void updateSnake() {
-#ifdef SEREVR
-  moveSnake();
-  packet[0]=snakeX[0];
-  packet[1]=snakeY[0];
 #else
-  if (try_receive(snakeHeadX, snakeHeadY, void1, void2)
-      && (snakeHeadX != snakeX[0] || snakeHeadY != snakeY[0])) {
-    moveSnake();
-  }
+  if (cmd == 0x18 && foodY < SCREEN_HEIGHT) {
+    foodHeadX = foodX;
+    foodHeadY = foodY - CELL_SIZE;
+  }  // 上
+  if (cmd == 0x52 && foodY > 0) {
+    foodHeadX = foodX;
+    foodHeadY = foodY + CELL_SIZE;
+  }  // 下
+  if (cmd == 0x08 && foodX > 0) {
+    foodHeadX = foodX - CELL_SIZE;
+    foodHeadY = foodY;
+  }  // 左
+  if (cmd == 0x5A && foodX < SCREEN_WIDTH) {
+    foodHeadX = foodX + CELL_SIZE;
+    foodHeadY = foodY;
+  }  // 右
+     // 穿墙逻辑
+  if (foodHeadX < 0) foodHeadX = SCREEN_WIDTH - CELL_SIZE;
+  if (foodHeadX >= SCREEN_WIDTH) foodHeadX = 0;
+  if (foodHeadY < 0) foodHeadY = SCREEN_HEIGHT - CELL_SIZE;
+  if (foodHeadY >= SCREEN_HEIGHT) foodHeadY = 0;
 #endif
+  IrReceiver.resume();
 }
-void updateFood(){
-  
+
+// 主循环
+void loop() {
+  // timer();
+  // drawTime();
+  handleIR();  // 处理红外遥控指令
+
+  // if (gameOver) {
+  //   showGameOver();  // 撞到自己后显示 GAME OVER
+  //   return;
+  // }
+
+  // 控制蛇的移动节奏
+
+
+  update();
+  // check1();
+  // checkFood();
+
+  display.clearDisplay();
+  drawSnake();
+  drawFood();
+  display.display();
 }

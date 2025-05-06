@@ -5,17 +5,24 @@
 #define UDP_PORT 9527
 #define MAX_PACKET_SIZE 255
 
-#define SERVER_IP IPAddress(192, 168, 43, 1)  // 替换为你想发送的目标 IP 地址
-#define CLIENT_IP IPAddress(192, 168, 43, 2)
+#define SERVER_IP IPAddress(192, 168, 43, 4)  // 替换为你想发送的目标 IP 地址
+#define CLIENT_IP IPAddress(192, 168, 43, 63)
 
 WiFiUDP UDP;
 #define PACKET_SIZE 6
+#define VOID_VALUE 255
 uint8_t packet[PACKET_SIZE];
+bool valid_digit(int a){
+  return packet[a]!= VOID_VALUE;
+}
+bool valid_digit(int a,int b){
+  return packet[a]!= VOID_VALUE&&packet[b]!= VOID_VALUE;
+}
 void clear_packet() {
-    memset(packet, 0, sizeof(packet));
+    memset(packet, 255, sizeof(packet));
 }
 void setup_net() {
-  
+  clear_packet();
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   Serial.print("Connecting to ");
   Serial.print(WIFI_SSID);
