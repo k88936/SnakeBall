@@ -2,6 +2,7 @@
 #include <Adafruit_SSD1306.h>
 #include <IRremote.hpp>
 #include "Net.h"
+//条件编译:注释掉下面这行编译成客户端(控制球) 不注释编译成服务端(控制蛇) 也就是说你需要改这里再传不同的板子
 #define SERVER
 // OLED 显示参数
 #define SCREEN_WIDTH 128
@@ -81,6 +82,7 @@ void update() {
 
 
 #ifdef SERVER
+  //服务端代码
   //Serial.println("ServerUpdate");
   if (shouldUpdate) {
     Serial.print("ShouldUpdate: ");
@@ -105,6 +107,7 @@ void update() {
     packet[3] = foodY;
   }
 #else
+  //客户端代码
   //Serial.println("ClientUpdate");
   if (valid_digit(0, 1) && (packet[0] != snakeX[0] || packet[1] != snakeY[0])) {
     moveSnake();
@@ -141,8 +144,10 @@ void update() {
 
 
 #ifdef SERVER
+  //服务端代码
   send_to_client();
 #else
+  //客户端代码
   send_to_server();
 #endif
 }
