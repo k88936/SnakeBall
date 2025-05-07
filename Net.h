@@ -1,11 +1,14 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
+//修改说明:手机开热点(频段2.4G)设为你的热点名和密码
 #define WIFI_SSID "kvtoMobilePhone"
 #define WIFI_PASS "k88666666"
 #define UDP_PORT 9527
 #define MAX_PACKET_SIZE 255
 
-#define SERVER_IP IPAddress(192, 168, 43, 63)  // 替换为你想发送的目标 IP 地址
+//设置方法:先编译上传服务端代码到一个板子,然后看你热点已连接,看ip地址改下面
+#define SERVER_IP IPAddress(192, 168, 43, 63)
+//设置方法:你把服务端的断电(防止两个设备你分不清),编译上传客户端代码到另一个板子,然后看你热点已连接,看ip地址改下面
 #define CLIENT_IP IPAddress(192, 168, 43, 4)
 
 WiFiUDP UDP;
